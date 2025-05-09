@@ -1,4 +1,4 @@
-#import "../lib.typ" : slides
+#import "@preview/thusliding:0.0.1" : slides
 
 #show: slides.with(
   title: "Tsinghua University", // Required
