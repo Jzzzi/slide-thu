@@ -11,16 +11,16 @@
   footer-title: none,
   footer-subtitle: none,
   date: none,
-  authors: (),
+  authors: (:),
   layout: "medium",
   ratio: 4/3,
-  title-color: none,
   count: "dot",
   footer: true,
   toc: true,
   theme: "normal"
 ) = {
-
+  // Theme Color of Tsinghua University
+  let theme-color = color.rgb(102, 8, 116) // Tsinghua Red
   // Parsing
   if layout not in layouts {
       panic("Unknown layout " + layout)
@@ -37,18 +37,20 @@
   }
 
   // Colors
-  if title-color == none {
-      title-color = blue.darken(50%)
+  if theme-color == none {
+      theme-color = blue.darken(50%)
   }
-  let block-color = title-color.lighten(90%)
-  let body-color = title-color.lighten(80%)
-  let header-color = title-color.lighten(65%)
-  let fill-color = title-color.lighten(50%)
+  let block-color = theme-color.lighten(90%)
+  let body-color = theme-color.lighten(80%)
+  let header-color = theme-color.lighten(65%)
+  let fill-color = theme-color.lighten(50%)
 
   // Setup
   set document(
     title: title,
-    author: authors,
+    author: for pair in authors {
+      pair.at(0) + ": " + pair.at(1) + "\n"
+    },
   )
   set heading(numbering: "1.a")
 
@@ -56,7 +58,7 @@
   set page(
     width: width,
     height: height,
-    margin: (x: 0.5 * space, top: space, bottom: 0.6 * space),
+    margin: (x: 0.5 * space, top: 1.0 * space, bottom: 0.6 * space),
   // HEADER
     header: [
       #context {
@@ -69,7 +71,7 @@
           if (theme == "full") {
             block(
               width: 100%,
-              fill: title-color,
+              fill: theme-color,
               height: space * 0.85,
               outset: (x: 0.5 * space)
             )[
@@ -81,18 +83,38 @@
               ]
             ]
           } else if (theme == "normal") {
-            set text(1.4em, weight: "bold", fill: title-color)
-            v(space / 2)
-            heading.body
-            if not heading.location().page() == page [
-              #{numbering("(i)", page - heading.location().page() + 1)}
-            ]
+            v(space / 8)
+            grid(
+              columns: (3fr, 1fr),
+              align: (left + top, right + top),
+              // fill: (white.darken(50%), white.darken(80%)), // DEBUG
+              block(
+                width: 100%,
+                height: 100%
+              )[
+                #set text(1.4em, weight: "bold", fill: theme-color)
+                #v(space / 4)
+                #heading.body
+                #if not heading.location().page() == page [
+                  #{numbering("(i)", page - heading.location().page() + 1)}
+                ]
+              ],
+              block(
+                width: 100%,
+                height: 100%
+              )[
+                #image(
+                  "img/logo.png",
+                  height: 65%,
+                )
+              ]
+            )
           }
         }
     }
   // COUNTER
     #if count == "dot" {
-      v(-space / 1.5)
+      v(-space / 1.8)
       set align(right + top)
       context {
         let last = counter(page).final().first()
@@ -122,7 +144,7 @@
         let current = here().page()
         set text(weight: "bold")
         set text(fill: white) if theme == "full"
-        set text(fill: title-color) if theme == "normal"
+        set text(fill: theme-color) if theme == "normal"
         [#current / #last]
       }
     }
@@ -162,10 +184,9 @@
                   footer-subtitle
               } else if subtitle != none {
                   subtitle
-              } else if authors != none {
-                    if (type(authors) != array) {authors = (authors,)}
-                    authors.join(", ", last: " and ")
-                  } else [#date]
+              } else {
+                date
+              }
             ]
           ]
           ]
@@ -207,14 +228,24 @@
       grid(
         columns: (1fr, 3fr),
         inset: 10pt,
-        align: (right,left),
-        fill: (title-color, white),
-        [#block(height: 100%)],[#text(1.2em, weight: "bold", fill: title-color)[#x]]
+        align: (horizon, left),
+        fill: (theme-color, white),
+        [#block(height: 100%)[
+          #place(
+            horizon + right,
+            image(
+              "img/logo_2.png",
+              height: 70%,
+            ),
+            dx: 90pt,
+          )
+        ]],
+        [#text(1.2em, weight: "bold", fill: theme-color)[#x]]
       )
 
   }
   show heading.where(level: 2): pagebreak(weak: true) // this is where the magic happens
-  show heading: set text(1.1em, fill: title-color)
+  show heading: set text(1.1em, fill: theme-color)
 
 
   // ADD. STYLING --------------------------------------------------
@@ -239,13 +270,13 @@
 
   // Bullet List
   show list: set list(marker: (
-    text(fill: title-color)[•],
-    text(fill: title-color)[‣],
-    text(fill: title-color)[-],
+    text(fill: theme-color)[•],
+    text(fill: theme-color)[‣],
+    text(fill: theme-color)[-],
   ))
 
   // Enum
-  let color_number(nrs) = text(fill:title-color)[*#nrs.*]
+  let color_number(nrs) = text(fill:theme-color)[*#nrs.*]
   set enum(numbering: color_number)
 
   // Table
@@ -281,7 +312,7 @@
       it
     }
     else {
-      underline(stroke: 0.5pt+title-color)[#it] // Web Links
+      underline(stroke: 0.5pt+theme-color)[#it] // Web Links
     }
   }
 
@@ -292,7 +323,6 @@
   )
 
   show outline: set heading(level: 2) // To not make the TOC heading a section slide by itself
-
   // Bibliography
   set bibliography(
     title: none
@@ -305,27 +335,65 @@
     panic("A title is required")
   }
   else {
-    if (type(authors) != array) {
-      authors = (authors,)
+    if (type(authors) != dictionary) {
+      panic("Authors must be an dictionary")
     }
     set page(footer: none, header: none, margin: 0cm)
+    // block for the title
     block(
-      inset: (x:0.5*space, y:1em),
-      fill: title-color,
+      inset: (x:0.5*space, y:2em),
+      fill: theme-color,
       width: 100%,
       height: 60%,
       align(bottom)[#text(2.0em, weight: "bold", fill: white, title)]
     )
+    // block for the subtitle
     block(
-      height: 30%,
+      above: 0%,
+      height: 20%,
       width: 100%,
-      inset: (x:0.5*space,top:0cm, bottom: 1em),
+      // fill: theme_color.lighten(90%), // DEBUG
+      inset: (x:0.5*space,top:1em, bottom: 1em),
       if subtitle != none {[
-        #text(1.4em, fill: title-color, weight: "bold", subtitle)
-      ]} +
-      if subtitle != none and date != none { text(1.4em)[ \ ] } +
-      if date != none {text(1.1em, date)} +
-      align(left+bottom, authors.join(", ", last: " & "))
+        #text(1.4em, fill: theme-color, weight: "bold", subtitle)
+      ]}
+    )
+    // block for the authors and logo
+    block(
+      above: 0%,
+      height: 20%,
+      width: 100%,
+      // fill: theme_color.lighten(80%), // DEBUG
+      inset: 0em,
+      grid(
+        columns: (2fr, 1fr),
+        // fill: (theme_color.lighten(80%), theme_color.lighten(90%)), // DEBUG
+        align: (left + bottom, right + bottom),
+        inset: 0em,
+        gutter: 0em,
+        block(
+          width: 100%,
+          height: 100%,
+          // fill: theme_color.lighten(80%), // DEBUG
+          inset: (x:0.6*space, y:0.35*space),
+        )[#align(left + bottom)[
+          #for pair in authors {
+            pair.at(1) + "\n"
+          }
+          ]
+        ],
+        block(
+          width: 100%,
+          height: 100%,
+          // fill: theme_color.lighten(90%), // DEBUG
+          inset: (x:0.3*space, y:0.2*space),
+        )[
+          #image(
+          "img/logo.png",
+          // height:15%,
+          )
+        ]
+      )
     )
   }
 
